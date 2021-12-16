@@ -26,7 +26,7 @@ function App() {
   const [price, setPrice] = React.useState<BigNumber>();
   const [bundler, setBundler] = React.useState<WebBundlr>();
   const [bundlerHttpAddress, setBundlerAddress] = React.useState<string>(
-    "https://node1.bundlr.network"
+    "https://dev1.bundlr.network"
   );
   const [fundAmount, setFundingAmount] = React.useState<string>();
   const [withdrawAmount, setWithdrawAmount] = React.useState<string>();
@@ -104,7 +104,7 @@ function App() {
     if (img) {
       const price = await bundler?.utils.getStorageCost("matic", img.length);
       //@ts-ignore
-      setPrice(price);
+      setPrice(price?.toString());
     }
   };
 
@@ -116,8 +116,8 @@ function App() {
       console.log(res);
       toast({
         status: res?.status === 200 ? "success" : "error",
-        title: res?.status === 200 ? "Successful!" : "Unsuccessful!",
-        description: res?.status === 200 ? res.data.id : undefined,
+        title: res?.status === 200 ? "Successful!" : `Unsuccessful! ${res?.status}`,
+        description: res?.data.id ? res.data.id : undefined,
         duration: 5000,
       });
     }
@@ -135,7 +135,7 @@ function App() {
   const withdrawMatic = async () => {
     if (bundler && withdrawAmount) {
       await bundler
-        .withdrawBalance(new BigNumber(ethers.utils.parseEther(withdrawAmount).toString()))
+        .withdrawBalance(new BigNumber(withdrawAmount))
         .then((data) => {
           console.log(data);
           toast({
