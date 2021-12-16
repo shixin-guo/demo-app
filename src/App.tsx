@@ -2,8 +2,9 @@ import React from "react";
 import { useWeb3React } from "@web3-react/core";
 import { InjectedConnector } from "@web3-react/injected-connector";
 import { WalletConnectConnector } from "@web3-react/walletconnect-connector";
-import { BundlrBrowserClient } from "bundlr-browser-client";
-import { ethers, BigNumber } from "ethers";
+import WebBundlr from "@bundlr-network/client/src/browser"
+import BigNumber from "bignumber.js";
+import { ethers } from "ethers";
 import { Button } from "@chakra-ui/button";
 import { Input, HStack, Text, VStack, useToast } from "@chakra-ui/react";
 
@@ -20,10 +21,10 @@ const walletconnect = new WalletConnectConnector({
 function App() {
   const web3 = useWeb3React();
   const library = web3.library as ethers.providers.Web3Provider;
-  const [maticBalance, setBalance] = React.useState<BigNumber>();
+  const [maticBalance, setBalance] = React.useState<String>();
   const [img, setImg] = React.useState<Buffer>();
   const [price, setPrice] = React.useState<BigNumber>();
-  const [bundler, setBundler] = React.useState<BundlrBrowserClient>();
+  const [bundler, setBundler] = React.useState<WebBundlr>();
   const [bundlerHttpAddress, setBundlerAddress] = React.useState<string>(
     "https://node1.bundlr.network"
   );
@@ -54,22 +55,23 @@ function App() {
       await library.send("wallet_switchEthereumChain", [{ chainId: "0x89" }]);
     }
     if (!bundlerHttpAddress) return;
-    const bundlr = new BundlrBrowserClient(bundlerHttpAddress, web3.library);
+    const bundlr = new WebBundlr(bundlerHttpAddress, "matic", web3.library);
     try {
       // Check for valid bundlr node
-      await bundlr.getPrice(1);
+      await bundlr.utils.getStorageCost("matic", 1);
     } catch {
       console.log("invalid bundlr node");
       return;
     }
     try {
-      await bundlr.connect();
+      await bundlr.ready();
     } catch (err) {
       console.log(err);
     } //@ts-ignore
-    if (!bundlr.signer.publicKey) {
+    if (!bundlr.address) {
       console.log("something went wrong");
     }
+    await bundler?.ready();
     setBundler(bundlr);
   };
   const handleFileClick = () => {
@@ -100,21 +102,22 @@ function App() {
 
   const handlePrice = async () => {
     if (img) {
-      const price = await bundler!.getPrice(img.length);
+      const price = await bundler?.utils.getStorageCost("matic", img.length);
+      //@ts-ignore
       setPrice(price);
     }
   };
 
   const uploadFile = async () => {
     if (img) {
-      const res = await bundler!.uploadItem(img, [
+      const res = await bundler?.uploader.upload(img, [
         { name: "Content-Type", value: "image/png" },
       ]);
       console.log(res);
       toast({
-        status: res.status === 200 ? "success" : "error",
-        title: res.status === 200 ? "Successful!" : "Unsuccessful!",
-        description: res.status === 200 ? res.data.id : undefined,
+        status: res?.status === 200 ? "success" : "error",
+        title: res?.status === 200 ? "Successful!" : "Unsuccessful!",
+        description: res?.status === 200 ? res.data.id : undefined,
         duration: 5000,
       });
     }
@@ -122,8 +125,8 @@ function App() {
 
   const fundMatic = async () => {
     if (bundler && fundAmount) {
-      const res = bundler.fundMatic(
-        BigNumber.from(ethers.utils.parseEther(fundAmount))
+      const res = await bundler.fund(
+        new BigNumber(fundAmount)
       );
       console.log(res);
     }
@@ -132,7 +135,7 @@ function App() {
   const withdrawMatic = async () => {
     if (bundler && withdrawAmount) {
       await bundler
-        .withdraw(BigNumber.from(ethers.utils.parseEther(withdrawAmount)))
+        .withdrawBalance(new BigNumber(ethers.utils.parseEther(withdrawAmount).toString()))
         .then((data) => {
           console.log(data);
           toast({
@@ -198,15 +201,15 @@ function App() {
               onClick={() => {
                 web3.account &&
                   bundler!
-                    .getBundlrBalance(web3.account)
-                    .then((res: BigNumber) => setBalance(res));
+                    .getBalance(web3.account)
+                    .then((res: BigNumber) => setBalance(res.toString()));
               }}
             >
               Get Matic Balance
             </Button>
             {maticBalance && (
               <Text>
-                Matic Balance: {ethers.utils.formatEther(maticBalance)}
+                Matic Balance: {maticBalance}
               </Text>
             )}
           </HStack>
@@ -238,7 +241,7 @@ function App() {
           <HStack>
             <Button onClick={handlePrice}>Get Price</Button>
             {price && (
-              <Text>MATIC Cost: {ethers.utils.formatEther(price)}</Text>
+              <Text>MATIC Cost: {price}</Text>
             )}
           </HStack>
           <Button onClick={uploadFile}>Upload to Bundlr Network</Button>
