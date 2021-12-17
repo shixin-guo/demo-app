@@ -1,6 +1,6 @@
 # Bundlr Network Browser Client Demo
 
-This app demonstrates usage of the [`bundlr-browser-client`](https://github.com/acolytec3/bundlr-browser-client) to upload data
+This app demonstrates usage of the [`bundlr-client`](https://github.com/Bundlr-Network/js-client) to upload data
 to the [Bundlr Network](https://bundlr.network) using any `web3provider` exposed by the [Ethers library](https://github.com/ethers-io/ethers.js), including Metamask or WalletConnect.
 
 ## Usage
