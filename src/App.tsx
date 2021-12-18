@@ -2,7 +2,7 @@ import React from "react";
 import { useWeb3React } from "@web3-react/core";
 import { InjectedConnector } from "@web3-react/injected-connector";
 import { WalletConnectConnector } from "@web3-react/walletconnect-connector";
-import WebBundlr from "@bundlr-network/client/src/browser"
+import WebBundlr from "@bundlr-network/client/web"
 import BigNumber from "bignumber.js";
 import { ethers } from "ethers";
 import { Button } from "@chakra-ui/button";
