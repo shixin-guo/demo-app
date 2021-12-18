@@ -5,7 +5,7 @@
   "description": "A demo application that implements the Bundlr web client to allow for 3rd party injected signers such as those exposed by MetaMask and WalletConnect",
   "homepage": "./",
   "dependencies": {
-    "@bundlr-network/client": "^0.4.0",
+    "@bundlr-network/client": "^0.4.3",
     "@chakra-ui/react": "^1.7.2",
     "@emotion/react": "^11.7.0",
     "@emotion/styled": "^11.6.0",
