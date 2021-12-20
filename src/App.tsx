@@ -58,7 +58,7 @@ function App() {
     const bundlr = new WebBundlr(bundlerHttpAddress, "matic", web3.library);
     try {
       // Check for valid bundlr node
-      await bundlr.utils.getStorageCost("matic", 1);
+      await bundlr.utils.getPrice("matic", 1);
     } catch {
       console.log("invalid bundlr node");
       return;
@@ -102,7 +102,7 @@ function App() {
 
   const handlePrice = async () => {
     if (img) {
-      const price = await bundler?.utils.getStorageCost("matic", img.length);
+      const price = await bundler?.utils.getPrice("matic", img.length);
       //@ts-ignore
       setPrice(price?.toString());
     }
