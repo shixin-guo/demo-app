@@ -1,27 +1,27 @@
 import React from "react";
-import { useWeb3React } from "@web3-react/core";
-import { InjectedConnector } from "@web3-react/injected-connector";
-import { WalletConnectConnector } from "@web3-react/walletconnect-connector";
+
 import { WebBundlr } from "@bundlr-network/client"
 import BigNumber from "bignumber.js";
-import { ethers } from "ethers";
 import { Button } from "@chakra-ui/button";
-import { Input, HStack, Text, VStack, useToast } from "@chakra-ui/react";
+import { Input, HStack, Text, VStack, useToast, Menu, MenuButton, MenuList, MenuItem } from "@chakra-ui/react";
+import { ChevronDownIcon } from "@chakra-ui/icons"
 
-const injected = new InjectedConnector({
-  supportedChainIds: [1, 137],
-});
+import WalletConnectProvider from "@walletconnect/web3-provider";
+import { providers } from "ethers"
+import { Web3Provider } from "@ethersproject/providers";
+import { useWallet } from "@solana/wallet-adapter-react"
+import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom"
+declare var window: any // TODO: specifically extend type to valid injected objects.
 
-const walletconnect = new WalletConnectConnector({
-  rpc: {
-    137: "https://polygon-rpc.com",
-  },
-});
+
 
 function App() {
-  const web3 = useWeb3React();
-  const library = web3.library as ethers.providers.Web3Provider;
-  const [maticBalance, setBalance] = React.useState<String>();
+  const defaultCurrency = "Select a Currency"
+  const defaultSelection = "Select a Provider"
+  const [currency, setCurrency] = React.useState<string>(defaultCurrency);
+  const [address, setAddress] = React.useState<string>();
+  const [selection, setSelection] = React.useState<string>(defaultSelection);
+  const [balance, setBalance] = React.useState<string>();
   const [img, setImg] = React.useState<Buffer>();
   const [price, setPrice] = React.useState<BigNumber>();
   const [bundler, setBundler] = React.useState<WebBundlr>();
@@ -30,50 +30,23 @@ function App() {
   );
   const [fundAmount, setFundingAmount] = React.useState<string>();
   const [withdrawAmount, setWithdrawAmount] = React.useState<string>();
+  const [provider, setProvider] = React.useState<Web3Provider>();
   const toast = useToast();
-  const connectWeb3 = async (
-    connector: InjectedConnector | WalletConnectConnector
-  ) => {
-    if (web3.active) {
-      web3.deactivate();
-      setBalance(undefined);
-      setImg(undefined);
-      setPrice(undefined);
-      setBundler(undefined);
-      return;
-    }
-    try {
-      await web3.activate(connector);
-    } catch (err) {
-      console.log(err);
-    }
-  };
 
-  const connectBundlr = async () => {
-    if (web3.chainId !== 137) {
-      // If not connected to polygon, request network switch
-      await library.send("wallet_switchEthereumChain", [{ chainId: "0x89" }]);
-    }
-    if (!bundlerHttpAddress) return;
-    const bundlr = new WebBundlr(bundlerHttpAddress, "matic", web3.library);
-    try {
-      // Check for valid bundlr node
-      await bundlr.utils.getPrice("matic", 1);
-    } catch {
-      console.log("invalid bundlr node");
-      return;
-    }
-    try {
-      await bundlr.ready();
-    } catch (err) {
-      console.log(err);
-    } //@ts-ignore
-    if (!bundlr.address) {
-      console.log("something went wrong");
-    }
-    await bundler?.ready();
-    setBundler(bundlr);
-  };
+
+
+  const clean = () => {
+    setBalance(undefined);
+    setImg(undefined);
+    setPrice(undefined);
+    setBundler(undefined);
+    setProvider(undefined);
+    setAddress(undefined);
+    setCurrency(defaultCurrency);
+    setSelection(defaultSelection);
+  }
+
+
   const handleFileClick = () => {
     var fileInputEl = document.createElement("input");
     fileInputEl.type = "file";
@@ -102,7 +75,7 @@ function App() {
 
   const handlePrice = async () => {
     if (img) {
-      const price = await bundler?.utils.getPrice("matic", img.length);
+      const price = await bundler?.utils.getPrice(currency as string, img.length);
       //@ts-ignore
       setPrice(price?.toString());
     }
@@ -123,19 +96,19 @@ function App() {
     }
   };
 
-  const fundMatic = async () => {
+  const fund = async () => {
     if (bundler && fundAmount) {
       const res = await bundler.fund(
-        new BigNumber(fundAmount)
+        fundAmount
       );
       console.log(res);
     }
   };
 
-  const withdrawMatic = async () => {
+  const withdraw = async () => {
     if (bundler && withdrawAmount) {
       await bundler
-        .withdrawBalance(new BigNumber(withdrawAmount))
+        .withdrawBalance(withdrawAmount)
         .then((data) => {
           console.log(data);
           toast({
@@ -154,6 +127,9 @@ function App() {
         });
     }
   };
+
+  // field change event handlers
+
   const updateAddress = (evt: React.BaseSyntheticEvent) => {
     setBundlerAddress(evt.target.value);
   };
@@ -166,26 +142,135 @@ function App() {
     setWithdrawAmount(evt.target.value);
   };
 
+
+  const connectWeb3 = async (connector: any) => {
+    if (provider) {
+      await clean();
+    }
+    const p = new providers.Web3Provider(connector);
+    await p._ready();
+    return p
+  }
+
+
+  const providerMap = {
+    "MetaMask": async (c: any) => {
+      if (!window?.ethereum?.isMetaMask) return;
+      const provider = await connectWeb3(window.ethereum);
+      try { // additional logic for requesting a chain switch and conditional chain add.
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: c.opts.chainId }],
+        })
+      } catch (e: any) {
+        if (e.code === 4902) {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: c.opts.chainId, rpcUrls: c.opts.rpcUrls, chainName: c.opts.chainName
+            }],
+          });
+        }
+      }
+      return provider;
+    },
+    "WalletConnect": async (c: any) => { return await connectWeb3(await (new WalletConnectProvider(c)).enable()) },
+    "Phantom": async (c: any) => {
+      if (window.solana.isPhantom) {
+        await window.solana.connect();
+        return new PhantomWalletAdapter();
+      }
+    }
+  } as any
+
+  const currencyMap = {
+    "solana": {
+      providers: ["Phantom"], opts: {}
+    },
+    "matic": {
+      providers: ["MetaMask", "WalletConnect"],
+      opts: {
+        chainId: '0x89',
+        chainName: 'Polygon Mainnet',
+        rpcUrls: ["https://polygon-rpc.com"],
+      },
+    }
+  } as any
+
+
+  /**
+   * initialises the selected provider/currency
+   * @param cname currency name
+   * @param pname provider name
+   * @returns 
+   */
+  const initProvider = async () => {
+    const pname = selection as string;
+    const cname = currency as string;
+    const p = providerMap[pname] // get provider entry
+    const c = currencyMap[cname]
+    console.log(`loading: ${pname} for ${cname}`)
+    const providerInstance = await p(c).catch(() => { toast({ status: "error", title: `Failed to load provider ${pname}`, duration: 10000 }); return; })
+    console.log(`setting provider: ${providerInstance}`)
+    setProvider(providerInstance)
+  };
+
+  const initBundlr = async () => {
+    const bundlr = new WebBundlr(bundlerHttpAddress, currency, provider)
+    try {
+      // Check for valid bundlr node
+      await bundlr.utils.getBundlerAddress(currency)
+    } catch {
+      console.log("invalid bundlr node");
+      return;
+    }
+    try {
+      await bundlr.ready();
+    } catch (err) {
+      console.log(err);
+    } //@ts-ignore
+    if (!bundlr.address) {
+      console.log("something went wrong");
+    }
+    toast({ status: "success", title: `Connected to ${bundlerHttpAddress}` })
+    setAddress(bundlr?.address)
+    setBundler(bundlr);
+  }
+
+  const toProperCase = (s: string) => { return s.charAt(0).toUpperCase() + s.substring(1).toLowerCase() }
+
+
   return (
-    <VStack mt={10}>
+    <VStack mt={10} >
       <HStack>
         {" "}
-        <Button onClick={() => connectWeb3(injected)}>
-          {web3.connector instanceof InjectedConnector && web3.active
-            ? "Disconnect"
-            : "Connect"}{" "}
-          Metamask
-        </Button>
-        <Button onClick={() => connectWeb3(walletconnect)}>
-          {web3.connector instanceof WalletConnectConnector && web3.active
-            ? "Disconnect"
-            : "Connect"}{" "}
-          WalletConnect
+        <Menu >
+          <MenuButton as={Button} rightIcon={<ChevronDownIcon />}>
+            {toProperCase(currency)}
+          </MenuButton>
+          <MenuList>
+            {Object.keys(currencyMap).map((v) => {
+              return (<MenuItem key={v} onClick={() => { clean(); setCurrency(v) }}>{toProperCase(v)}</MenuItem>) // proper/title case
+            })}
+          </MenuList>
+        </Menu>
+        <Menu >
+          <MenuButton disabled={currency === defaultCurrency} as={Button} rightIcon={<ChevronDownIcon />}>
+            {selection}
+          </MenuButton>
+          <MenuList>
+            {Object.keys(providerMap).map((v) => {
+              return ((currencyMap[currency] && currencyMap[currency].providers.indexOf(v) !== -1) ? (<MenuItem key={v} onClick={() => setSelection(v)}>{v}</MenuItem>) : undefined)
+            })}
+          </MenuList>
+        </Menu>
+        <Button disabled={!(selection != defaultSelection && currency != defaultCurrency && bundlerHttpAddress.length > 8)} onClick={async () => await initProvider()}>
+          {provider ? "Disconnect" : "Connect"}
         </Button>
       </HStack>
-      <Text>Connected Account: {web3.account ?? "None"}</Text>
+      <Text>Connected Account: {address ?? "None"}</Text>
       <HStack>
-        <Button w={400} disabled={!web3.active} onClick={connectBundlr}>
+        <Button w={400} disabled={!provider} onClick={async () => await initBundlr()}>
           Connect to Bundlr Network
         </Button>
         <Input
@@ -194,60 +279,64 @@ function App() {
           placeholder="Bundler Address"
         />
       </HStack>
-      {bundler && (
-        <>
-          <HStack>
-            <Button
-              onClick={() => {
-                web3.account &&
-                  bundler!
-                    .getBalance(web3.account)
-                    .then((res: BigNumber) => setBalance(res.toString()));
-              }}
-            >
-              Get Matic Balance
-            </Button>
-            {maticBalance && (
-              <Text>
-                Matic Balance: {maticBalance}
-              </Text>
-            )}
-          </HStack>
-          <HStack>
-            <Button w={200} onClick={fundMatic}>
-              Fund Bundlr
-            </Button>
-            <Input
-              placeholder="MATIC Amount"
-              value={fundAmount}
-              onChange={updateFundAmount}
-            />
-          </HStack>
-          <HStack>
-            <Button w={200} onClick={withdrawMatic}>
-              Withdraw Balance
-            </Button>
-            <Input
-              placeholder="MATIC Amount"
-              value={withdrawAmount}
-              onChange={updateWithdrawAmount}
-            />
-          </HStack>
-        </>
-      )}
-      <Button onClick={handleFileClick}>Select file from Device</Button>
-      {img && (
-        <>
-          <HStack>
-            <Button onClick={handlePrice}>Get Price</Button>
-            {price && (
-              <Text>MATIC Cost: {price}</Text>
-            )}
-          </HStack>
-          <Button onClick={uploadFile}>Upload to Bundlr Network</Button>
-        </>
-      )}
-    </VStack>
+      {
+        bundler && (
+          <>
+            <HStack>
+              <Button
+                onClick={() => {
+                  address &&
+                    bundler!
+                      .getBalance(address)
+                      .then((res: BigNumber) => setBalance(res.toString()));
+                }}
+              >
+                Get {toProperCase(currency)} Balance
+              </Button>
+              {balance && (
+                <Text>
+                  {toProperCase(currency)} Balance: {balance}
+                </Text>
+              )}
+            </HStack>
+            <HStack>
+              <Button w={200} onClick={fund}>
+                Fund Bundlr
+              </Button>
+              <Input
+                placeholder={`${toProperCase(currency)} Amount`}
+                value={fundAmount}
+                onChange={updateFundAmount}
+              />
+            </HStack>
+            <HStack>
+              <Button w={200} onClick={withdraw}>
+                Withdraw Balance
+              </Button>
+              <Input
+                placeholder={`${toProperCase(currency)} Amount`}
+                value={withdrawAmount}
+                onChange={updateWithdrawAmount}
+              />
+            </HStack>
+            <Button onClick={handleFileClick}>Select file from Device</Button>
+            {
+              img && (
+                <>
+                  <HStack>
+                    <Button onClick={handlePrice}>Get Price</Button>
+                    {price && (
+                      <Text>{`${toProperCase(currency)} Cost: ${price}`}</Text>
+                    )}
+                  </HStack>
+                  <Button onClick={uploadFile}>Upload to Bundlr Network</Button>
+                </>
+              )
+            }
+          </>
+        )
+      }
+    </VStack >
   );
 }
 
