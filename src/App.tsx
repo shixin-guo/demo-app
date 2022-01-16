@@ -9,7 +9,6 @@ import { ChevronDownIcon } from "@chakra-ui/icons"
 import WalletConnectProvider from "@walletconnect/web3-provider";
 import { providers } from "ethers"
 import { Web3Provider } from "@ethersproject/providers";
-import { useWallet } from "@solana/wallet-adapter-react"
 import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom"
 declare var window: any // TODO: specifically extend type to valid injected objects.
 
@@ -178,7 +177,9 @@ function App() {
     "Phantom": async (c: any) => {
       if (window.solana.isPhantom) {
         await window.solana.connect();
-        return new PhantomWalletAdapter();
+        const p = new PhantomWalletAdapter()
+        await p.connect()
+        return p;
       }
     }
   } as any
