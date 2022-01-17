@@ -156,17 +156,18 @@ function App() {
     "MetaMask": async (c: any) => {
       if (!window?.ethereum?.isMetaMask) return;
       const provider = await connectWeb3(window.ethereum);
+      const chainId = `0x${c.opts.chainId.toString(16)}`
       try { // additional logic for requesting a chain switch and conditional chain add.
         await window.ethereum.request({
           method: 'wallet_switchEthereumChain',
-          params: [{ chainId: c.opts.chainId }],
+          params: [{ chainId }],
         })
       } catch (e: any) {
         if (e.code === 4902) {
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
             params: [{
-              chainId: c.opts.chainId, rpcUrls: c.opts.rpcUrls, chainName: c.opts.chainName
+              chainId, rpcUrls: c.opts.rpcUrls, chainName: c.opts.chainName
             }],
           });
         }
@@ -184,18 +185,52 @@ function App() {
     }
   } as any
 
+  const ethProviders = ["MetaMask", "WalletConnect"]
+
   const currencyMap = {
     "solana": {
       providers: ["Phantom"], opts: {}
     },
     "matic": {
-      providers: ["MetaMask", "WalletConnect"],
+      providers: ethProviders,
       opts: {
-        chainId: '0x89',
+        chainId: 137,
         chainName: 'Polygon Mainnet',
         rpcUrls: ["https://polygon-rpc.com"],
       },
-    }
+    },
+    "arbitrum": {
+      providers: ethProviders,
+      opts: {
+        chainName: "Arbitrum One",
+        chainId: 42161,
+        rpcUrls: ["https://arb1.arbitrum.io/rpc"]
+      }
+    },
+    "bnb": {
+      providers: ethProviders,
+      opts: {
+        chainName: "Binance Smart Chain",
+        chainId: 56,
+        rpcUrls: ["https://bsc-dataseed.binance.org/"]
+      }
+    },
+    "avalanche": {
+      providers: ethProviders,
+      opts: {
+        chainName: "Avalanche Network",
+        chainId: 43114,
+        rpcUrls: ["https://api.avax.network/ext/bc/C/rpc"]
+      }
+    },
+    "boba": {
+      providers: ethProviders,
+      opts: {
+        chainName: "BOBA L2",
+        chainId: 288,
+        rpcUrls: ["https://mainnet.boba.network"]
+      }
+    },
   } as any
 
 
@@ -206,13 +241,17 @@ function App() {
    * @returns 
    */
   const initProvider = async () => {
+    if (provider) {
+      setProvider(undefined);
+      setBundler(undefined);
+      return;
+    }
     const pname = selection as string;
     const cname = currency as string;
     const p = providerMap[pname] // get provider entry
     const c = currencyMap[cname]
     console.log(`loading: ${pname} for ${cname}`)
     const providerInstance = await p(c).catch(() => { toast({ status: "error", title: `Failed to load provider ${pname}`, duration: 10000 }); return; })
-    console.log(`setting provider: ${providerInstance}`)
     setProvider(providerInstance)
   };
 
@@ -222,7 +261,7 @@ function App() {
       // Check for valid bundlr node
       await bundlr.utils.getBundlerAddress(currency)
     } catch {
-      console.log("invalid bundlr node");
+      toast({ status: "error", title: `Failed to connect to bundlr ${bundlerHttpAddress}`, duration: 10000 })
       return;
     }
     try {
