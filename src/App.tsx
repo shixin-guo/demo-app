@@ -82,25 +82,26 @@ function App() {
 
   const uploadFile = async () => {
     if (img) {
-      const res = await bundler?.uploader.upload(img, [
-        { name: "Content-Type", value: "image/png" },
-      ]);
-      toast({
-        status: res?.status === 200 ? "success" : "error",
-        title: res?.status === 200 ? "Successful!" : `Unsuccessful! ${res?.status}`,
-        description: res?.data.id ? res.data.id : undefined,
-        duration: 5000,
-      });
+      await bundler?.uploader.upload(img, [{ name: "Content-Type", value: "image/png" }])
+        .then((res) => {
+          toast({
+            status: res?.status === 200 ? "success" : "error",
+            title: res?.status === 200 ? "Successful!" : `Unsuccessful! ${res?.status}`,
+            description: res?.data.id ? res.data.id : undefined,
+            duration: 5000,
+          });
+        })
+        .catch(e => { toast({ status: "error", title: `Failed to upload - ${e}` }) })
     }
   };
 
   const fund = async () => {
     if (bundler && fundAmount) {
-      const res = await bundler.fund(
-        fundAmount
-      );
-      toast({ status: "success", title: `Funded ${res.target}\n tx ID : ${res.id}`, duration: 10000 })
+      await bundler.fund(fundAmount)
+        .then(res => { toast({ status: "success", title: `Funded ${res?.target}\n tx ID : ${res?.id}`, duration: 10000 }) })
+        .catch(e => { toast({ status: "error", title: `Failed to fund - ${e.data?.message || e.message}` }) })
     }
+
   };
 
   const withdraw = async () => {
@@ -110,7 +111,7 @@ function App() {
         .then((data) => {
           toast({
             status: "success",
-            title: "Withdrawal successful",
+            title: `Withdrawal successful - ${data.data?.tx_id}`,
             duration: 5000,
           });
         })
@@ -118,7 +119,7 @@ function App() {
           toast({
             status: "error",
             title: "Withdrawal Unsuccessful!",
-            description: err.response.data,
+            description: err.message,
             duration: 5000,
           });
         });
