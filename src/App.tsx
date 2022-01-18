@@ -153,6 +153,7 @@ function App() {
   const providerMap = {
     "MetaMask": async (c: any) => {
       if (!window?.ethereum?.isMetaMask) return;
+      await window.ethereum.enable();
       const provider = await connectWeb3(window.ethereum);
       const chainId = `0x${c.opts.chainId.toString(16)}`
       try { // additional logic for requesting a chain switch and conditional chain add.
