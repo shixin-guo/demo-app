@@ -85,7 +85,6 @@ function App() {
       const res = await bundler?.uploader.upload(img, [
         { name: "Content-Type", value: "image/png" },
       ]);
-      console.log(res);
       toast({
         status: res?.status === 200 ? "success" : "error",
         title: res?.status === 200 ? "Successful!" : `Unsuccessful! ${res?.status}`,
@@ -100,7 +99,7 @@ function App() {
       const res = await bundler.fund(
         fundAmount
       );
-      console.log(res);
+      toast({ status: "success", title: `Funded ${res.target}\n tx ID : ${res.id}`, duration: 10000 })
     }
   };
 
@@ -109,7 +108,6 @@ function App() {
       await bundler
         .withdrawBalance(withdrawAmount)
         .then((data) => {
-          console.log(data);
           toast({
             status: "success",
             title: "Withdrawal successful",
