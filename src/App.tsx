@@ -101,7 +101,9 @@ function App() {
   const fund = async () => {
     if (bundler && fundAmount) {
       toast({ status: "info", title: "Funding...", duration: 15000 })
-      await bundler.fund(fundAmount)
+      const value = parseInput(fundAmount)
+      if (!value) return
+      await bundler.fund(value)
         .then(res => { toast({ status: "success", title: `Funded ${res?.target}\n tx ID : ${res?.id}`, duration: 10000 }) })
         .catch(e => { toast({ status: "error", title: `Failed to fund - ${e.data?.message || e.message}` }) })
     }
@@ -111,8 +113,10 @@ function App() {
   const withdraw = async () => {
     if (bundler && withdrawAmount) {
       toast({ status: "info", title: "Withdrawing..", duration: 15000 })
+      const value = parseInput(withdrawAmount)
+      if (!value) return
       await bundler
-        .withdrawBalance(withdrawAmount)
+        .withdrawBalance(value)
         .then((data) => {
           toast({
             status: "success",
@@ -296,6 +300,16 @@ function App() {
     intervalRef.current = window.setInterval(async () => { bundler?.getLoadedBalance().then((r) => { setBalance(r.toString()) }).catch(_ => clearInterval(intervalRef.current)) }, 5000)
   }
 
+  // parse decimal input into atomic units
+  const parseInput = (input: string | number) => {
+    const conv = new BigNumber(input).multipliedBy(bundler!.currencyConfig.base[1]);
+    if (conv.isLessThan(1)) {
+      toast({ status: "error", title: `Value too small!` })
+      return;
+    }
+    return conv;
+  }
+
   return (
     <VStack mt={10} >
       <HStack>
@@ -353,7 +367,7 @@ function App() {
               </Button>
               {balance && (
                 <Text>
-                  {toProperCase(currency)} Balance: {balance}
+                  {toProperCase(currency)} Balance: {bundler.utils.unitConverter(balance).decimalPlaces(6, 3).toString()} {bundler.currencyConfig.ticker.toLowerCase()}
                 </Text>
               )}
             </HStack>
