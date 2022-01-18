@@ -30,6 +30,7 @@ function App() {
   const [fundAmount, setFundingAmount] = React.useState<string>();
   const [withdrawAmount, setWithdrawAmount] = React.useState<string>();
   const [provider, setProvider] = React.useState<Web3Provider>();
+  // let refresher = {};
   const toast = useToast();
 
 
@@ -43,6 +44,7 @@ function App() {
     setAddress(undefined);
     setCurrency(defaultCurrency);
     setSelection(defaultSelection);
+
   }
 
 
@@ -85,10 +87,10 @@ function App() {
       await bundler?.uploader.upload(img, [{ name: "Content-Type", value: "image/png" }])
         .then((res) => {
           toast({
-            status: res?.status === 200 ? "success" : "error",
-            title: res?.status === 200 ? "Successful!" : `Unsuccessful! ${res?.status}`,
-            description: res?.data.id ? res.data.id : undefined,
-            duration: 5000,
+            status: res?.status === 200 || res?.status === 201 ? "success" : "error",
+            title: res?.status === 200 || res?.status === 201 ? "Successful!" : `Unsuccessful! ${res?.status}`,
+            description: res?.data.id ? `https://arweave.net/${res.data.id}` : undefined,
+            duration: 15000,
           });
         })
         .catch(e => { toast({ status: "error", title: `Failed to upload - ${e}` }) })
@@ -97,6 +99,7 @@ function App() {
 
   const fund = async () => {
     if (bundler && fundAmount) {
+      toast({ status: "info", title: "Funding...", duration: 15000 })
       await bundler.fund(fundAmount)
         .then(res => { toast({ status: "success", title: `Funded ${res?.target}\n tx ID : ${res?.id}`, duration: 10000 }) })
         .catch(e => { toast({ status: "error", title: `Failed to fund - ${e.data?.message || e.message}` }) })
@@ -106,6 +109,7 @@ function App() {
 
   const withdraw = async () => {
     if (bundler && withdrawAmount) {
+      toast({ status: "info", title: "Withdrawing..", duration: 15000 })
       await bundler
         .withdrawBalance(withdrawAmount)
         .then((data) => {
@@ -257,7 +261,7 @@ function App() {
   };
 
   const initBundlr = async () => {
-    const bundlr = new WebBundlr(bundlerHttpAddress, currency, provider)
+    const bundlr = new WebBundlr(bundlerHttpAddress, currency, provider, { providerUrl: "https://api.testnet.solana.com" })
     try {
       // Check for valid bundlr node
       await bundlr.utils.getBundlerAddress(currency)
