@@ -398,7 +398,7 @@ function App() {
                   <HStack>
                     <Button onClick={handlePrice}>Get Price</Button>
                     {price && (
-                      <Text>{`${toProperCase(currency)} Cost: ${price}`}</Text>
+                      <Text>{`Cost: ${bundler.utils.unitConverter(price).toString()} ${bundler.currencyConfig.ticker.toLowerCase()} `}</Text>
                     )}
                   </HStack>
                   <Button onClick={uploadFile}>Upload to Bundlr Network</Button>
