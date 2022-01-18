@@ -32,7 +32,7 @@ function App() {
   const [provider, setProvider] = React.useState<Web3Provider>();
   // let refresher = {};
   const toast = useToast();
-
+  // const refresher = React.useRef();
 
 
   const clean = () => {
@@ -261,7 +261,7 @@ function App() {
   };
 
   const initBundlr = async () => {
-    const bundlr = new WebBundlr(bundlerHttpAddress, currency, provider, { providerUrl: "https://api.testnet.solana.com" })
+    const bundlr = new WebBundlr(bundlerHttpAddress, currency, provider)
     try {
       // Check for valid bundlr node
       await bundlr.utils.getBundlerAddress(currency)
