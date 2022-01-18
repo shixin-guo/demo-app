@@ -244,6 +244,7 @@ function App() {
     if (provider) {
       setProvider(undefined);
       setBundler(undefined);
+      setAddress(undefined);
       return;
     }
     const pname = selection as string;
