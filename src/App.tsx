@@ -30,12 +30,13 @@ function App() {
   const [fundAmount, setFundingAmount] = React.useState<string>();
   const [withdrawAmount, setWithdrawAmount] = React.useState<string>();
   const [provider, setProvider] = React.useState<Web3Provider>();
-  // let refresher = {};
+
   const toast = useToast();
-  // const refresher = React.useRef();
+  const intervalRef = React.useRef<number>();
 
 
-  const clean = () => {
+  const clean = async () => {
+    clearInterval(intervalRef.current)
     setBalance(undefined);
     setImg(undefined);
     setPrice(undefined);
@@ -245,12 +246,16 @@ function App() {
    * @returns 
    */
   const initProvider = async () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+    }
     if (provider) {
       setProvider(undefined);
       setBundler(undefined);
       setAddress(undefined);
       return;
     }
+
     const pname = selection as string;
     const cname = currency as string;
     const p = providerMap[pname] // get provider entry
@@ -283,7 +288,13 @@ function App() {
   }
 
   const toProperCase = (s: string) => { return s.charAt(0).toUpperCase() + s.substring(1).toLowerCase() }
+  const toggleRefresh = async () => {
+    if (intervalRef) {
+      clearInterval(intervalRef.current)
+    }
 
+    intervalRef.current = window.setInterval(async () => { bundler?.getLoadedBalance().then((r) => { setBalance(r.toString()) }).catch(_ => clearInterval(intervalRef.current)) }, 5000)
+  }
 
   return (
     <VStack mt={10} >
@@ -329,12 +340,14 @@ function App() {
           <>
             <HStack>
               <Button
-                onClick={() => {
+                onClick={async () => {
                   address &&
                     bundler!
                       .getBalance(address)
                       .then((res: BigNumber) => setBalance(res.toString()));
+                  await toggleRefresh();
                 }}
+
               >
                 Get {toProperCase(currency)} Balance
               </Button>
