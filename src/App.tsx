@@ -305,7 +305,7 @@ function App() {
             })}
           </MenuList>
         </Menu>
-        <Button disabled={!(selection != defaultSelection && currency != defaultCurrency && bundlerHttpAddress.length > 8)} onClick={async () => await initProvider()}>
+        <Button disabled={!(selection !== defaultSelection && currency !== defaultCurrency && bundlerHttpAddress.length > 8)} onClick={async () => await initProvider()}>
           {provider ? "Disconnect" : "Connect"}
         </Button>
       </HStack>
