@@ -3,13 +3,18 @@ import React from "react";
 import { WebBundlr } from "@bundlr-network/client"
 import BigNumber from "bignumber.js";
 import { Button } from "@chakra-ui/button";
-import { Input, HStack, Text, VStack, useToast, Menu, MenuButton, MenuList, MenuItem } from "@chakra-ui/react";
+import { Input, HStack, Text, VStack, useToast, Menu, MenuButton, MenuList, MenuItem, Tooltip } from "@chakra-ui/react";
 import { ChevronDownIcon } from "@chakra-ui/icons"
 
 import WalletConnectProvider from "@walletconnect/web3-provider";
 import { providers } from "ethers"
 import { Web3Provider } from "@ethersproject/providers";
 import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom"
+import * as nearAPI from "near-api-js"
+import {  WalletConnection } from "near-api-js";
+
+const { keyStores, connect } = nearAPI;
+
 declare var window: any // TODO: specifically extend type to valid injected objects.
 
 
@@ -25,7 +30,7 @@ function App() {
   const [price, setPrice] = React.useState<BigNumber>();
   const [bundler, setBundler] = React.useState<WebBundlr>();
   const [bundlerHttpAddress, setBundlerAddress] = React.useState<string>(
-    "https://node1.bundlr.network"
+    "https://dev1.bundlr.network"
   );
   const [fundAmount, setFundingAmount] = React.useState<string>();
   const [withdrawAmount, setWithdrawAmount] = React.useState<string>();
@@ -104,8 +109,10 @@ function App() {
       const value = parseInput(fundAmount)
       if (!value) return
       await bundler.fund(value)
-        .then(res => { toast({ status: "success", title: `Funded ${res?.target}\n tx ID : ${res?.id}`, duration: 10000 }) })
-        .catch(e => { toast({ status: "error", title: `Failed to fund - ${e.data?.message || e.message}` }) })
+        .then(res => { toast({ status: "success", title: `Funded ${res?.target}`, description: ` tx ID : ${res?.id}`, duration: 10000 }) })
+        .catch(e => {
+          toast({ status: "error", title: `Failed to fund - ${e.data?.message || e.message}` })
+        })
     }
 
   };
@@ -159,13 +166,15 @@ function App() {
     return p
   }
 
-
+/**
+ * Map of providers with initialisation code - c is the configuration object from currencyMap
+ */
   const providerMap = {
     "MetaMask": async (c: any) => {
       if (!window?.ethereum?.isMetaMask) return;
       await window.ethereum.enable();
       const provider = await connectWeb3(window.ethereum);
-      const chainId = `0x${c.opts.chainId.toString(16)}`
+      const chainId = `0x${c.chainId.toString(16)}`
       try { // additional logic for requesting a chain switch and conditional chain add.
         await window.ethereum.request({
           method: 'wallet_switchEthereumChain',
@@ -176,7 +185,7 @@ function App() {
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
             params: [{
-              chainId, rpcUrls: c.opts.rpcUrls, chainName: c.opts.chainName
+              chainId, rpcUrls: c.rpcUrls, chainName: c.chainName
             }],
           });
         }
@@ -191,7 +200,21 @@ function App() {
         await p.connect()
         return p;
       }
+    },
+    "wallet.near.org": async (c: any) => {
+      const near = await connect(c);
+      const wallet = new WalletConnection(near, "bundlr");
+      if (!wallet.isSignedIn()) {
+        toast({ status: "info", title: "You are being redirected to authorize this application..." })
+        window.setTimeout(() => { wallet.requestSignIn() }, 4000)
+        // wallet.requestSignIn();
+      }
+      else if(!await c.keyStore.getKey(wallet._networkId, wallet.getAccountId())){
+        toast({ status: "warning", title: "Click 'Connect' to be redirected to authorize access key creation." })
+      }
+      return wallet
     }
+
   } as any
 
   const ethProviders = ["MetaMask", "WalletConnect"]
@@ -240,6 +263,25 @@ function App() {
         rpcUrls: ["https://mainnet.boba.network"]
       }
     },
+    // "near": {
+    //   networkId: "mainnet",
+    //   keyStore: new keyStores.BrowserLocalStorageKeyStore(),
+    //   nodeUrl: "https://rpc.mainnet.near.org",
+    //   walletUrl: "https://wallet.mainnet.near.org",
+    //   helperUrl: "https://helper.mainnet.near.org",
+    //   explorerUrl: "https://explorer.mainnet.near.org",
+    // },
+    "near": {
+      providers: ["wallet.near.org"],
+      opts: {
+        networkId: "testnet",
+        keyStore: new keyStores.BrowserLocalStorageKeyStore(),
+        nodeUrl: "https://rpc.testnet.near.org",
+        walletUrl: "https://wallet.testnet.near.org",
+        helperUrl: "https://helper.testnet.near.org",
+        explorerUrl: "https://explorer.testnet.near.org",
+      }
+    }
   } as any
 
 
@@ -265,7 +307,7 @@ function App() {
     const p = providerMap[pname] // get provider entry
     const c = currencyMap[cname]
     console.log(`loading: ${pname} for ${cname}`)
-    const providerInstance = await p(c).catch(() => { toast({ status: "error", title: `Failed to load provider ${pname}`, duration: 10000 }); return; })
+    const providerInstance = await p(c.opts).catch((e: Error) => { toast({ status: "error", title: `Failed to load provider ${pname}`, duration: 10000 }); console.log(e); return; })
     setProvider(providerInstance)
   };
 
@@ -341,7 +383,7 @@ function App() {
       <Text>Connected Account: {address ?? "None"}</Text>
       <HStack>
         <Button w={400} disabled={!provider} onClick={async () => await initBundlr()}>
-          Connect to Bundlr Network
+          Connect to Bundlr
         </Button>
         <Input
           value={bundlerHttpAddress}
@@ -358,7 +400,9 @@ function App() {
                   address &&
                     bundler!
                       .getBalance(address)
-                      .then((res: BigNumber) => setBalance(res.toString()));
+                      .then((res: BigNumber) => {
+                        setBalance(res.toString())
+                      });
                   await toggleRefresh();
                 }}
 
@@ -366,9 +410,11 @@ function App() {
                 Get {toProperCase(currency)} Balance
               </Button>
               {balance && (
-                <Text>
-                  {toProperCase(currency)} Balance: {bundler.utils.unitConverter(balance).decimalPlaces(6, 3).toString()} {bundler.currencyConfig.ticker.toLowerCase()}
-                </Text>
+                <Tooltip label = {`(${balance} ${bundler.currencyConfig.base[0]})`}>
+                  <Text>
+                    {toProperCase(currency)} Balance: {bundler.utils.unitConverter(balance).toFixed(7,2).toString()} {bundler.currencyConfig.ticker.toLowerCase()} 
+                  </Text>
+                </Tooltip>
               )}
             </HStack>
             <HStack>
