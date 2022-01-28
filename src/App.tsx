@@ -11,7 +11,7 @@ import { providers } from "ethers"
 import { Web3Provider } from "@ethersproject/providers";
 import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom"
 import * as nearAPI from "near-api-js"
-import {  WalletConnection } from "near-api-js";
+import { WalletConnection } from "near-api-js";
 
 const { keyStores, connect } = nearAPI;
 
@@ -166,9 +166,9 @@ function App() {
     return p
   }
 
-/**
- * Map of providers with initialisation code - c is the configuration object from currencyMap
- */
+  /**
+   * Map of providers with initialisation code - c is the configuration object from currencyMap
+   */
   const providerMap = {
     "MetaMask": async (c: any) => {
       if (!window?.ethereum?.isMetaMask) return;
@@ -209,7 +209,7 @@ function App() {
         window.setTimeout(() => { wallet.requestSignIn() }, 4000)
         // wallet.requestSignIn();
       }
-      else if(!await c.keyStore.getKey(wallet._networkId, wallet.getAccountId())){
+      else if (!await c.keyStore.getKey(wallet._networkId, wallet.getAccountId())) {
         toast({ status: "warning", title: "Click 'Connect' to be redirected to authorize access key creation." })
       }
       return wallet
@@ -263,23 +263,15 @@ function App() {
         rpcUrls: ["https://mainnet.boba.network"]
       }
     },
-    // "near": {
-    //   networkId: "mainnet",
-    //   keyStore: new keyStores.BrowserLocalStorageKeyStore(),
-    //   nodeUrl: "https://rpc.mainnet.near.org",
-    //   walletUrl: "https://wallet.mainnet.near.org",
-    //   helperUrl: "https://helper.mainnet.near.org",
-    //   explorerUrl: "https://explorer.mainnet.near.org",
-    // },
     "near": {
       providers: ["wallet.near.org"],
       opts: {
-        networkId: "testnet",
+        networkId: "mainnet",
         keyStore: new keyStores.BrowserLocalStorageKeyStore(),
-        nodeUrl: "https://rpc.testnet.near.org",
-        walletUrl: "https://wallet.testnet.near.org",
-        helperUrl: "https://helper.testnet.near.org",
-        explorerUrl: "https://explorer.testnet.near.org",
+        nodeUrl: "https://rpc.mainnet.near.org",
+        walletUrl: "https://wallet.mainnet.near.org",
+        helperUrl: "https://helper.mainnet.near.org",
+        explorerUrl: "https://explorer.mainnet.near.org",
       }
     }
   } as any
@@ -410,9 +402,9 @@ function App() {
                 Get {toProperCase(currency)} Balance
               </Button>
               {balance && (
-                <Tooltip label = {`(${balance} ${bundler.currencyConfig.base[0]})`}>
+                <Tooltip label={`(${balance} ${bundler.currencyConfig.base[0]})`}>
                   <Text>
-                    {toProperCase(currency)} Balance: {bundler.utils.unitConverter(balance).toFixed(7,2).toString()} {bundler.currencyConfig.ticker.toLowerCase()} 
+                    {toProperCase(currency)} Balance: {bundler.utils.unitConverter(balance).toFixed(7, 2).toString()} {bundler.currencyConfig.ticker.toLowerCase()}
                   </Text>
                 </Tooltip>
               )}
