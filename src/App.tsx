@@ -30,7 +30,7 @@ function App() {
   const [price, setPrice] = React.useState<BigNumber>();
   const [bundler, setBundler] = React.useState<WebBundlr>();
   const [bundlerHttpAddress, setBundlerAddress] = React.useState<string>(
-    "https://dev1.bundlr.network"
+    "https://node1.bundlr.network"
   );
   const [fundAmount, setFundingAmount] = React.useState<string>();
   const [withdrawAmount, setWithdrawAmount] = React.useState<string>();
