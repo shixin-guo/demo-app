@@ -9,14 +9,14 @@ import { ChevronDownIcon } from "@chakra-ui/icons"
 import WalletConnectProvider from "@walletconnect/web3-provider";
 import { providers } from "ethers"
 import { Web3Provider } from "@ethersproject/providers";
-import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom"
+//import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom"
 import * as nearAPI from "near-api-js"
 import { WalletConnection } from "near-api-js";
 
 const { keyStores, connect } = nearAPI;
 
 declare var window: any // TODO: specifically extend type to valid injected objects.
-
+const PhantomWalletAdapter = require("@solana/wallet-adapter-phantom/lib/cjs/index").PhantomWalletAdapter
 
 
 function App() {
