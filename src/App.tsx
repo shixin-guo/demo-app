@@ -255,7 +255,7 @@ function App() {
         rpcUrls: ["https://api.avax.network/ext/bc/C/rpc"]
       }
     },
-    "boba": {
+    "boba-eth": {
       providers: ethProviders,
       opts: {
         chainName: "BOBA L2",
