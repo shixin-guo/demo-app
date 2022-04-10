@@ -32,6 +32,12 @@ function App() {
   const [bundlerHttpAddress, setBundlerAddress] = React.useState<string>(
     "https://node1.bundlr.network"
   );
+
+  const [rpcUrl, setRpcUrl] = React.useState<string>();
+  const [contractAddress, setContractAddress] = React.useState<string>();
+  const [devMode, setDevMode] = React.useState<boolean>(false);
+  const [chainChange, setChainChange] = React.useState<boolean>(true);
+
   const [fundAmount, setFundingAmount] = React.useState<string>();
   const [withdrawAmount, setWithdrawAmount] = React.useState<string>();
   const [provider, setProvider] = React.useState<Web3Provider>();
@@ -175,6 +181,9 @@ function App() {
       await window.ethereum.enable();
       const provider = await connectWeb3(window.ethereum);
       const chainId = `0x${c.chainId.toString(16)}`
+      if(!chainChange){
+        return provider
+      }
       try { // additional logic for requesting a chain switch and conditional chain add.
         await window.ethereum.request({
           method: 'wallet_switchEthereumChain',
@@ -263,6 +272,14 @@ function App() {
         rpcUrls: ["https://mainnet.boba.network"]
       }
     },
+    "boba": {
+      providers: ethProviders,
+      opts: {
+        chainName: "BOBA L2",
+        chainId: 288,
+        rpcUrls: ["https://mainnet.boba.network"]
+      }
+    },
     "near": {
       providers: ["wallet.near.org"],
       opts: {
@@ -304,7 +321,7 @@ function App() {
   };
 
   const initBundlr = async () => {
-    const bundlr = new WebBundlr(bundlerHttpAddress, currency, provider)
+    const bundlr = new WebBundlr(bundlerHttpAddress, currency, provider, {providerUrl: rpcUrl, contractAddress})
     try {
       // Check for valid bundlr node
       await bundlr.utils.getBundlerAddress(currency)
@@ -383,6 +400,27 @@ function App() {
           placeholder="Bundler Address"
         />
       </HStack>
+      {devMode && (
+        <>
+        <Text>Advanced Overrides (Only change if you know what you're doing!)</Text>
+        <HStack mt={10}>
+        <Input
+          value={rpcUrl}
+          onChange={(evt: React.BaseSyntheticEvent) => {setRpcUrl(evt.target.value)}}
+          placeholder="RPC Url"
+        />
+        <Input
+          value={contractAddress}
+          onChange={(evt: React.BaseSyntheticEvent) => {setContractAddress(evt.target.value)}}
+          placeholder="Contract address"
+        />
+        <Button onClick={() => setChainChange(!chainChange)} width='450px'>
+          {chainChange ? "Disable" : "Enable"} Chain Changing
+        </Button>
+
+        </HStack>
+        </>
+      )}
       {
         bundler && (
           <>
@@ -446,7 +484,11 @@ function App() {
           </>
         )
       }
+      <Button onClick={() => {setDevMode(!devMode)}}>
+        {devMode ?  "Hide": "Show"} Advanced Options
+      </Button>
     </VStack >
+
   );
 }
 
