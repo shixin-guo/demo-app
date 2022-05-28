@@ -181,7 +181,7 @@ function App() {
       await window.ethereum.enable();
       const provider = await connectWeb3(window.ethereum);
       const chainId = `0x${c.chainId.toString(16)}`
-      if(!chainChange){
+      if (!chainChange) {
         return provider
       }
       try { // additional logic for requesting a chain switch and conditional chain add.
@@ -321,7 +321,7 @@ function App() {
   };
 
   const initBundlr = async () => {
-    const bundlr = new WebBundlr(bundlerHttpAddress, currency, provider, {providerUrl: rpcUrl, contractAddress})
+    const bundlr = new WebBundlr(bundlerHttpAddress, currency, provider, { providerUrl: rpcUrl, contractAddress })
     try {
       // Check for valid bundlr node
       await bundlr.utils.getBundlerAddress(currency)
@@ -402,23 +402,23 @@ function App() {
       </HStack>
       {devMode && (
         <>
-        <Text>Advanced Overrides (Only change if you know what you're doing!)</Text>
-        <HStack mt={10}>
-        <Input
-          value={rpcUrl}
-          onChange={(evt: React.BaseSyntheticEvent) => {setRpcUrl(evt.target.value)}}
-          placeholder="RPC Url"
-        />
-        <Input
-          value={contractAddress}
-          onChange={(evt: React.BaseSyntheticEvent) => {setContractAddress(evt.target.value)}}
-          placeholder="Contract address"
-        />
-        <Button onClick={() => setChainChange(!chainChange)} width='450px'>
-          {chainChange ? "Disable" : "Enable"} Chain Changing
-        </Button>
+          <Text>Advanced Overrides (Only change if you know what you're doing!)</Text>
+          <HStack mt={10}>
+            <Input
+              value={rpcUrl}
+              onChange={(evt: React.BaseSyntheticEvent) => { setRpcUrl(evt.target.value) }}
+              placeholder="RPC Url"
+            />
+            <Input
+              value={contractAddress}
+              onChange={(evt: React.BaseSyntheticEvent) => { setContractAddress(evt.target.value) }}
+              placeholder="Contract address"
+            />
+            <Button onClick={() => setChainChange(!chainChange)} width='450px'>
+              {chainChange ? "Disable" : "Enable"} Chain Changing
+            </Button>
 
-        </HStack>
+          </HStack>
         </>
       )}
       {
@@ -484,8 +484,8 @@ function App() {
           </>
         )
       }
-      <Button onClick={() => {setDevMode(!devMode)}}>
-        {devMode ?  "Hide": "Show"} Advanced Options
+      <Button onClick={() => { setDevMode(!devMode) }}>
+        {devMode ? "Hide" : "Show"} Advanced Options
       </Button>
     </VStack >
 
