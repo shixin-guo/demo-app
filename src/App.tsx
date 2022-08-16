@@ -1,27 +1,27 @@
 import React from "react";
 
-import { WebBundlr } from "@bundlr-network/client"
+import { WebBundlr } from "@bundlr-network/client";
 import BigNumber from "bignumber.js";
 import { Button } from "@chakra-ui/button";
 import { Input, HStack, Text, VStack, useToast, Menu, MenuButton, MenuList, MenuItem, Tooltip } from "@chakra-ui/react";
-import { ChevronDownIcon } from "@chakra-ui/icons"
+import { ChevronDownIcon } from "@chakra-ui/icons";
 
 import WalletConnectProvider from "@walletconnect/web3-provider";
-import { providers } from "ethers"
+import { providers } from "ethers";
 import { Web3Provider } from "@ethersproject/providers";
 //import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom"
-import * as nearAPI from "near-api-js"
+import * as nearAPI from "near-api-js";
 import { WalletConnection } from "near-api-js";
 
 const { keyStores, connect } = nearAPI;
 
-declare var window: any // TODO: specifically extend type to valid injected objects.
-const PhantomWalletAdapter = require("@solana/wallet-adapter-phantom/lib/cjs/index").PhantomWalletAdapter
+declare var window: any; // TODO: specifically extend type to valid injected objects.
+const PhantomWalletAdapter = require("@solana/wallet-adapter-phantom/lib/cjs/index").PhantomWalletAdapter;
 
 
 function App() {
-  const defaultCurrency = "Select a Currency"
-  const defaultSelection = "Select a Provider"
+  const defaultCurrency = "Select a Currency";
+  const defaultSelection = "Select a Provider";
   const [currency, setCurrency] = React.useState<string>(defaultCurrency);
   const [address, setAddress] = React.useState<string>();
   const [selection, setSelection] = React.useState<string>(defaultSelection);
@@ -47,7 +47,7 @@ function App() {
 
 
   const clean = async () => {
-    clearInterval(intervalRef.current)
+    clearInterval(intervalRef.current);
     setBalance(undefined);
     setImg(undefined);
     setPrice(undefined);
@@ -57,7 +57,7 @@ function App() {
     setCurrency(defaultCurrency);
     setSelection(defaultSelection);
 
-  }
+  };
 
 
   const handleFileClick = () => {
@@ -96,7 +96,7 @@ function App() {
 
   const uploadFile = async () => {
     if (img) {
-      await bundler?.uploader.upload(img, [{ name: "Content-Type", value: "image/png" }])
+      await bundler?.uploader.upload(img, { tags: [{ name: "Content-Type", value: "image/png" }] })
         .then((res) => {
           toast({
             status: res?.status === 200 || res?.status === 201 ? "success" : "error",
@@ -105,29 +105,29 @@ function App() {
             duration: 15000,
           });
         })
-        .catch(e => { toast({ status: "error", title: `Failed to upload - ${e}` }) })
+        .catch(e => { toast({ status: "error", title: `Failed to upload - ${e}` }); });
     }
   };
 
   const fund = async () => {
     if (bundler && fundAmount) {
-      toast({ status: "info", title: "Funding...", duration: 15000 })
-      const value = parseInput(fundAmount)
-      if (!value) return
+      toast({ status: "info", title: "Funding...", duration: 15000 });
+      const value = parseInput(fundAmount);
+      if (!value) return;
       await bundler.fund(value)
-        .then(res => { toast({ status: "success", title: `Funded ${res?.target}`, description: ` tx ID : ${res?.id}`, duration: 10000 }) })
+        .then(res => { toast({ status: "success", title: `Funded ${res?.target}`, description: ` tx ID : ${res?.id}`, duration: 10000 }); })
         .catch(e => {
-          toast({ status: "error", title: `Failed to fund - ${e.data?.message || e.message}` })
-        })
+          toast({ status: "error", title: `Failed to fund - ${e.data?.message || e.message}` });
+        });
     }
 
   };
 
   const withdraw = async () => {
     if (bundler && withdrawAmount) {
-      toast({ status: "info", title: "Withdrawing..", duration: 15000 })
-      const value = parseInput(withdrawAmount)
-      if (!value) return
+      toast({ status: "info", title: "Withdrawing..", duration: 15000 });
+      const value = parseInput(withdrawAmount);
+      if (!value) return;
       await bundler
         .withdrawBalance(value)
         .then((data) => {
@@ -169,8 +169,8 @@ function App() {
     }
     const p = new providers.Web3Provider(connector);
     await p._ready();
-    return p
-  }
+    return p;
+  };
 
   /**
    * Map of providers with initialisation code - c is the configuration object from currencyMap
@@ -180,15 +180,15 @@ function App() {
       if (!window?.ethereum?.isMetaMask) return;
       await window.ethereum.enable();
       const provider = await connectWeb3(window.ethereum);
-      const chainId = `0x${c.chainId.toString(16)}`
+      const chainId = `0x${c.chainId.toString(16)}`;
       if (!chainChange) {
-        return provider
+        return provider;
       }
       try { // additional logic for requesting a chain switch and conditional chain add.
         await window.ethereum.request({
           method: 'wallet_switchEthereumChain',
           params: [{ chainId }],
-        })
+        });
       } catch (e: any) {
         if (e.code === 4902) {
           await window.ethereum.request({
@@ -201,12 +201,12 @@ function App() {
       }
       return provider;
     },
-    "WalletConnect": async (c: any) => { return await connectWeb3(await (new WalletConnectProvider(c)).enable()) },
+    "WalletConnect": async (c: any) => { return await connectWeb3(await (new WalletConnectProvider(c)).enable()); },
     "Phantom": async (c: any) => {
       if (window.solana.isPhantom) {
         await window.solana.connect();
-        const p = new PhantomWalletAdapter()
-        await p.connect()
+        const p = new PhantomWalletAdapter();
+        await p.connect();
         return p;
       }
     },
@@ -214,19 +214,19 @@ function App() {
       const near = await connect(c);
       const wallet = new WalletConnection(near, "bundlr");
       if (!wallet.isSignedIn()) {
-        toast({ status: "info", title: "You are being redirected to authorize this application..." })
-        window.setTimeout(() => { wallet.requestSignIn() }, 4000)
+        toast({ status: "info", title: "You are being redirected to authorize this application..." });
+        window.setTimeout(() => { wallet.requestSignIn(); }, 4000);
         // wallet.requestSignIn();
       }
       else if (!await c.keyStore.getKey(wallet._networkId, wallet.getAccountId())) {
-        toast({ status: "warning", title: "Click 'Connect' to be redirected to authorize access key creation." })
+        toast({ status: "warning", title: "Click 'Connect' to be redirected to authorize access key creation." });
       }
-      return wallet
+      return wallet;
     }
 
-  } as any
+  } as any;
 
-  const ethProviders = ["MetaMask", "WalletConnect"]
+  const ethProviders = ["MetaMask", "WalletConnect"];
 
   const currencyMap = {
     "solana": {
@@ -291,7 +291,7 @@ function App() {
         explorerUrl: "https://explorer.mainnet.near.org",
       }
     }
-  } as any
+  } as any;
 
 
   /**
@@ -302,7 +302,7 @@ function App() {
    */
   const initProvider = async () => {
     if (intervalRef.current) {
-      clearInterval(intervalRef.current)
+      clearInterval(intervalRef.current);
     }
     if (provider) {
       setProvider(undefined);
@@ -313,20 +313,20 @@ function App() {
 
     const pname = selection as string;
     const cname = currency as string;
-    const p = providerMap[pname] // get provider entry
-    const c = currencyMap[cname]
-    console.log(`loading: ${pname} for ${cname}`)
-    const providerInstance = await p(c.opts).catch((e: Error) => { toast({ status: "error", title: `Failed to load provider ${pname}`, duration: 10000 }); console.log(e); return; })
-    setProvider(providerInstance)
+    const p = providerMap[pname]; // get provider entry
+    const c = currencyMap[cname];
+    console.log(`loading: ${pname} for ${cname}`);
+    const providerInstance = await p(c.opts).catch((e: Error) => { toast({ status: "error", title: `Failed to load provider ${pname}`, duration: 10000 }); console.log(e); return; });
+    setProvider(providerInstance);
   };
 
   const initBundlr = async () => {
-    const bundlr = new WebBundlr(bundlerHttpAddress, currency, provider, { providerUrl: rpcUrl, contractAddress })
+    const bundlr = new WebBundlr(bundlerHttpAddress, currency, provider, { providerUrl: rpcUrl, contractAddress });
     try {
       // Check for valid bundlr node
-      await bundlr.utils.getBundlerAddress(currency)
+      await bundlr.utils.getBundlerAddress(currency);
     } catch {
-      toast({ status: "error", title: `Failed to connect to bundlr ${bundlerHttpAddress}`, duration: 10000 })
+      toast({ status: "error", title: `Failed to connect to bundlr ${bundlerHttpAddress}`, duration: 10000 });
       return;
     }
     try {
@@ -337,29 +337,29 @@ function App() {
     if (!bundlr.address) {
       console.log("something went wrong");
     }
-    toast({ status: "success", title: `Connected to ${bundlerHttpAddress}` })
-    setAddress(bundlr?.address)
+    toast({ status: "success", title: `Connected to ${bundlerHttpAddress}` });
+    setAddress(bundlr?.address);
     setBundler(bundlr);
-  }
+  };
 
-  const toProperCase = (s: string) => { return s.charAt(0).toUpperCase() + s.substring(1).toLowerCase() }
+  const toProperCase = (s: string) => { return s.charAt(0).toUpperCase() + s.substring(1).toLowerCase(); };
   const toggleRefresh = async () => {
     if (intervalRef) {
-      clearInterval(intervalRef.current)
+      clearInterval(intervalRef.current);
     }
 
-    intervalRef.current = window.setInterval(async () => { bundler?.getLoadedBalance().then((r) => { setBalance(r.toString()) }).catch(_ => clearInterval(intervalRef.current)) }, 5000)
-  }
+    intervalRef.current = window.setInterval(async () => { bundler?.getLoadedBalance().then((r) => { setBalance(r.toString()); }).catch(_ => clearInterval(intervalRef.current)); }, 5000);
+  };
 
   // parse decimal input into atomic units
   const parseInput = (input: string | number) => {
     const conv = new BigNumber(input).multipliedBy(bundler!.currencyConfig.base[1]);
     if (conv.isLessThan(1)) {
-      toast({ status: "error", title: `Value too small!` })
+      toast({ status: "error", title: `Value too small!` });
       return;
     }
     return conv;
-  }
+  };
 
   return (
     <VStack mt={10} >
@@ -371,7 +371,7 @@ function App() {
           </MenuButton>
           <MenuList>
             {Object.keys(currencyMap).map((v) => {
-              return (<MenuItem key={v} onClick={() => { clean(); setCurrency(v) }}>{toProperCase(v)}</MenuItem>) // proper/title case
+              return (<MenuItem key={v} onClick={() => { clean(); setCurrency(v); }}>{toProperCase(v)}</MenuItem>); // proper/title case
             })}
           </MenuList>
         </Menu>
@@ -381,7 +381,7 @@ function App() {
           </MenuButton>
           <MenuList>
             {Object.keys(providerMap).map((v) => {
-              return ((currencyMap[currency] && currencyMap[currency].providers.indexOf(v) !== -1) ? (<MenuItem key={v} onClick={() => setSelection(v)}>{v}</MenuItem>) : undefined)
+              return ((currencyMap[currency] && currencyMap[currency].providers.indexOf(v) !== -1) ? (<MenuItem key={v} onClick={() => setSelection(v)}>{v}</MenuItem>) : undefined);
             })}
           </MenuList>
         </Menu>
@@ -406,12 +406,12 @@ function App() {
           <HStack mt={10}>
             <Input
               value={rpcUrl}
-              onChange={(evt: React.BaseSyntheticEvent) => { setRpcUrl(evt.target.value) }}
+              onChange={(evt: React.BaseSyntheticEvent) => { setRpcUrl(evt.target.value); }}
               placeholder="RPC Url"
             />
             <Input
               value={contractAddress}
-              onChange={(evt: React.BaseSyntheticEvent) => { setContractAddress(evt.target.value) }}
+              onChange={(evt: React.BaseSyntheticEvent) => { setContractAddress(evt.target.value); }}
               placeholder="Contract address"
             />
             <Button onClick={() => setChainChange(!chainChange)} width='450px'>
@@ -431,7 +431,7 @@ function App() {
                     bundler!
                       .getBalance(address)
                       .then((res: BigNumber) => {
-                        setBalance(res.toString())
+                        setBalance(res.toString());
                       });
                   await toggleRefresh();
                 }}
@@ -484,7 +484,7 @@ function App() {
           </>
         )
       }
-      <Button onClick={() => { setDevMode(!devMode) }}>
+      <Button onClick={() => { setDevMode(!devMode); }}>
         {devMode ? "Hide" : "Show"} Advanced Options
       </Button>
     </VStack >
