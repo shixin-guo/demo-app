@@ -3,7 +3,7 @@ import React from "react";
 import { WebBundlr } from "@bundlr-network/client";
 import BigNumber from "bignumber.js";
 import { Button } from "@chakra-ui/button";
-import { Input, HStack, Text, VStack, useToast, Menu, MenuButton, MenuList, MenuItem, Tooltip } from "@chakra-ui/react";
+import { Input, HStack, Text, VStack, useToast, Menu, MenuButton, MenuList, MenuItem, Tooltip, Alert, AlertIcon } from "@chakra-ui/react";
 import { ChevronDownIcon } from "@chakra-ui/icons";
 
 import WalletConnectProvider from "@walletconnect/web3-provider";
@@ -103,6 +103,21 @@ function App() {
             title: res?.status === 200 || res?.status === 201 ? "Successful!" : `Unsuccessful! ${res?.status}`,
             description: res?.data.id ? `https://arweave.net/${res.data.id}` : undefined,
             duration: 15000,
+            render: () => (
+              <Alert
+                status={res?.status === 200 || res?.status === 201 ? "success" : "error"}
+                alignItems="start"
+                borderRadius="md"
+                boxShadow="lg"
+                paddingEnd={8}
+                textAlign="start"
+                width="auto"
+              >
+                <AlertIcon />
+                <a href={`https://arweave.net/${res.data.id}`} target="_blank">{`https://arweave.net/${res.data.id}`}</a>
+              </Alert>
+
+            )
           });
         })
         .catch(e => { toast({ status: "error", title: `Failed to upload - ${e}` }); });
@@ -477,7 +492,7 @@ function App() {
                       <Text>{`Cost: ${bundler.utils.unitConverter(price).toString()} ${bundler.currencyConfig.ticker.toLowerCase()} `}</Text>
                     )}
                   </HStack>
-                  <Button onClick={uploadFile}>Upload to Bundlr Network</Button>
+                  <Button onClick={uploadFile}>Upload to Bundlr</Button>
                 </>
               )
             }
