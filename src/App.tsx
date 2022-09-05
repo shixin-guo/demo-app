@@ -6,12 +6,17 @@ import { Button } from "@chakra-ui/button";
 import { Input, HStack, Text, VStack, useToast, Menu, MenuButton, MenuList, MenuItem, Tooltip, Alert, AlertIcon } from "@chakra-ui/react";
 import { ChevronDownIcon } from "@chakra-ui/icons";
 
+// @ts-ignore
+import fileReaderStream from "filereader-stream";
+// import StreamToAsyncIterator from "@bundlr-network/client/build/common/s2ai";
+// import { Readable } from "stream";
 import WalletConnectProvider from "@walletconnect/web3-provider";
 import { providers } from "ethers";
 import { Web3Provider } from "@ethersproject/providers";
 //import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom"
 import * as nearAPI from "near-api-js";
 import { WalletConnection } from "near-api-js";
+import { sleep } from "@bundlr-network/client/build/common/upload";
 
 const { keyStores, connect } = nearAPI;
 
@@ -26,9 +31,12 @@ function App() {
   const [address, setAddress] = React.useState<string>();
   const [selection, setSelection] = React.useState<string>(defaultSelection);
   const [balance, setBalance] = React.useState<string>();
-  const [img, setImg] = React.useState<Buffer>();
+  const [mimeType, setMimeType] = React.useState<string>();
+  const [imgStream, setImgStream] = React.useState<ReadableStream>();
   const [price, setPrice] = React.useState<BigNumber>();
+  const [size, setSize] = React.useState<number>();
   const [bundler, setBundler] = React.useState<WebBundlr>();
+  const [totalUploaded, setTotalUploaded] = React.useState<number>(0);
   const [bundlerHttpAddress, setBundlerAddress] = React.useState<string>(
     "https://node1.bundlr.network"
   );
@@ -49,13 +57,14 @@ function App() {
   const clean = async () => {
     clearInterval(intervalRef.current);
     setBalance(undefined);
-    setImg(undefined);
+    setImgStream(undefined);
     setPrice(undefined);
     setBundler(undefined);
     setProvider(undefined);
     setAddress(undefined);
     setCurrency(defaultCurrency);
     setSelection(defaultSelection);
+    setTotalUploaded(0);
 
   };
 
@@ -63,7 +72,7 @@ function App() {
   const handleFileClick = () => {
     var fileInputEl = document.createElement("input");
     fileInputEl.type = "file";
-    fileInputEl.accept = "image/*";
+    fileInputEl.accept = "*";
     fileInputEl.style.display = "none";
     document.body.appendChild(fileInputEl);
     fileInputEl.addEventListener("input", function (e) {
@@ -75,28 +84,40 @@ function App() {
 
   const handleUpload = async (evt: React.ChangeEvent<HTMLInputElement>) => {
     let files = evt.target.files;
-    let reader = new FileReader();
-    if (files && files.length > 0) {
-      reader.onload = function () {
-        if (reader.result) {
-          setImg(Buffer.from(reader.result as ArrayBuffer));
-        }
-      };
-      reader.readAsArrayBuffer(files[0]);
+    if (files?.length !== 1) {
+      throw new Error(`Invalid number of files (expected 1, got ${files?.length})`);
     }
+    setMimeType(files[0]?.type ?? "application/octet-stream");
+    setSize(files[0]?.size ?? 0);
+    setImgStream(fileReaderStream(files[0]));
   };
 
   const handlePrice = async () => {
-    if (img) {
-      const price = await bundler?.utils.getPrice(currency as string, img.length);
+    if (size) {
+      const price = await bundler?.utils.getPrice(currency as string, size);
       //@ts-ignore
       setPrice(price?.toString());
     }
   };
 
   const uploadFile = async () => {
-    if (img) {
-      await bundler?.uploader.upload(img, { tags: [{ name: "Content-Type", value: "image/png" }] })
+    if (imgStream) {
+      toast({ title: "Starting upload...", status: "info" });
+      setTotalUploaded(0);
+      await sleep(2_000); // sleep as this is all main thread (TODO: move to web worker?)
+      const uploader = bundler?.uploader.chunkedUploader;
+      uploader?.setBatchSize(2);
+      uploader?.setChunkSize(2_000_000);
+      uploader?.on("chunkUpload", (e) => {
+        // toast({
+        //   status: "info",
+        //   title: "Upload progress",
+        //   description: `${((e.totalUploaded / ((size ?? 0))) * 100).toFixed()}%`
+        // });
+        setTotalUploaded(e.totalUploaded);
+      });
+      //@ts-ignore
+      uploader?.uploadData(imgStream, { tags: [{ name: "Content-Type", value: mimeType ?? "application/octet-stream" }] })
         .then((res) => {
           toast({
             status: res?.status === 200 || res?.status === 201 ? "success" : "error",
@@ -114,7 +135,7 @@ function App() {
                 width="auto"
               >
                 <AlertIcon />
-                <a href={`https://arweave.net/${res.data.id}`} target="_blank">{`https://arweave.net/${res.data.id}`}</a>
+                <a href={`https://arweave.net/${res.data.id}`} target="_blank" rel="noreferrer">{`https://arweave.net/${res.data.id}`}</a>
               </Alert>
 
             )
@@ -484,7 +505,7 @@ function App() {
             </HStack>
             <Button onClick={handleFileClick}>Select file from Device</Button>
             {
-              img && (
+              imgStream && (
                 <>
                   <HStack>
                     <Button onClick={handlePrice}>Get Price</Button>
@@ -499,6 +520,11 @@ function App() {
           </>
         )
       }
+      {totalUploaded && (
+        <>
+          <p>Upload progress: {((totalUploaded / ((size ?? 0))) * 100).toFixed()}%</p>
+        </>
+      )}
       <Button onClick={() => { setDevMode(!devMode); }}>
         {devMode ? "Hide" : "Show"} Advanced Options
       </Button>
