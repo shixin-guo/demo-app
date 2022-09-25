@@ -265,12 +265,20 @@ function App() {
   const ethProviders = ["MetaMask", "WalletConnect"];
 
   const currencyMap = {
+    // "ethereum": {
+    //   providers: ethProviders,
+    //   opts: {
+    //     chainId: 4,
+    //     chainName: 'Ethereum rinkeby',
+    //     rpcUrls: ["https://rinkeby.infura.io/v3"],
+    //   },
+    // },
     "ethereum": {
       providers: ethProviders,
       opts: {
-        chainId: 4,
-        chainName: 'Ethereum rinkeby',
-        rpcUrls: ["https://rinkeby.infura.io/v3"],
+        chainId: 5,
+        chainName: 'Ethereum Goerli',
+        rpcUrls: ["https://goerli.infura.io/v3/"],
       },
     },
     "solana": {
@@ -365,8 +373,7 @@ function App() {
   };
 
   const initBundlr = async () => {
-    console.log(provider);
-    debugger
+   
     const bundlr = new WebBundlr(bundlerHttpAddress, currency, provider, { providerUrl: rpcUrl, contractAddress });
     try {
       // Check for valid bundlr node
@@ -385,6 +392,7 @@ function App() {
       console.log("something went wrong");
     }
     toast({ status: "success", title: `Connected to ${bundlerHttpAddress}` });
+    debugger
     setAddress(bundlr?.address);
     setBundler(bundlr);
   };
