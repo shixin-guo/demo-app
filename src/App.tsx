@@ -38,7 +38,7 @@ function App() {
   const [bundler, setBundler] = React.useState<WebBundlr>();
   const [totalUploaded, setTotalUploaded] = React.useState<number>(0);
   const [bundlerHttpAddress, setBundlerAddress] = React.useState<string>(
-    "https://node1.bundlr.network"
+    "https://devnet.bundlr.network"
   );
 
   const [rpcUrl, setRpcUrl] = React.useState<string>();
@@ -265,6 +265,14 @@ function App() {
   const ethProviders = ["MetaMask", "WalletConnect"];
 
   const currencyMap = {
+    "ethereum": {
+      providers: ethProviders,
+      opts: {
+        chainId: 4,
+        chainName: 'Ethereum rinkeby',
+        rpcUrls: ["https://rinkeby.infura.io/v3"],
+      },
+    },
     "solana": {
       providers: ["Phantom"], opts: {}
     },
@@ -357,6 +365,8 @@ function App() {
   };
 
   const initBundlr = async () => {
+    console.log(provider);
+    debugger
     const bundlr = new WebBundlr(bundlerHttpAddress, currency, provider, { providerUrl: rpcUrl, contractAddress });
     try {
       // Check for valid bundlr node
@@ -370,6 +380,7 @@ function App() {
     } catch (err) {
       console.log(err);
     } //@ts-ignore
+    console.log(bundlr.address);
     if (!bundlr.address) {
       console.log("something went wrong");
     }
