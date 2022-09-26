@@ -154,6 +154,9 @@ function App() {
       debugger
       await bundler.fund(value)
         .then(res => { toast({ status: "success", title: `Funded ${res?.target}`, description: ` tx ID : ${res?.id}`, duration: 10000 }); })
+        .catch(e => {
+          console.dir(e);
+        })
        
     }
 
