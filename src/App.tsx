@@ -148,13 +148,13 @@ function App() {
   const fund = async () => {
     if (bundler && fundAmount) {
       toast({ status: "info", title: "Funding...", duration: 15000 });
+      console.log(fundAmount);
       const value = parseInput(fundAmount);
       if (!value) return;
+      debugger
       await bundler.fund(value)
         .then(res => { toast({ status: "success", title: `Funded ${res?.target}`, description: ` tx ID : ${res?.id}`, duration: 10000 }); })
-        .catch(e => {
-          toast({ status: "error", title: `Failed to fund - ${e.data?.message || e.message}` });
-        });
+       
     }
 
   };
@@ -265,22 +265,22 @@ function App() {
   const ethProviders = ["MetaMask", "WalletConnect"];
 
   const currencyMap = {
-    // "ethereum": {
-    //   providers: ethProviders,
-    //   opts: {
-    //     chainId: 4,
-    //     chainName: 'Ethereum rinkeby',
-    //     rpcUrls: ["https://rinkeby.infura.io/v3"],
-    //   },
-    // },
     "ethereum": {
       providers: ethProviders,
       opts: {
-        chainId: 5,
-        chainName: 'Ethereum Goerli',
-        rpcUrls: ["https://goerli.infura.io/v3/"],
+        chainId: 4,
+        chainName: 'Ethereum rinkeby',
+        rpcUrls: ["https://rinkeby.infura.io/v3"],
       },
     },
+    // "ethereum": {
+    //   providers: ethProviders,
+    //   opts: {
+    //     chainId: 5,
+    //     chainName: 'Ethereum Goerli',
+    //     rpcUrls: ["https://goerli.infura.io/v3/"],
+    //   },
+    // },
     "solana": {
       providers: ["Phantom"], opts: {}
     },
@@ -392,7 +392,6 @@ function App() {
       console.log("something went wrong");
     }
     toast({ status: "success", title: `Connected to ${bundlerHttpAddress}` });
-    debugger
     setAddress(bundlr?.address);
     setBundler(bundlr);
   };
@@ -408,6 +407,7 @@ function App() {
 
   // parse decimal input into atomic units
   const parseInput = (input: string | number) => {
+    console.log(bundler!.currencyConfig.base[1]);
     const conv = new BigNumber(input).multipliedBy(bundler!.currencyConfig.base[1]);
     if (conv.isLessThan(1)) {
       toast({ status: "error", title: `Value too small!` });
