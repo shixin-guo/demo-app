@@ -1934,10 +1934,10 @@
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
-"@bundlr-network/client@^0.8.5":
-  version "0.8.5"
-  resolved "https://registry.yarnpkg.com/@bundlr-network/client/-/client-0.8.5.tgz#ef2dfb00bb06442d860ae18bc5be3ffd90124138"
-  integrity sha512-fl1TqldNbuMZtH/OMQPWqGAqS6ioD54EBwwokWQSxhpRn3qItQV0G+F1IDunohEFQMtcaEoIVyb8FXMUoL1iqw==
+"@bundlr-network/client@^0.8.8":
+  version "0.8.8"
+  resolved "https://registry.yarnpkg.com/@bundlr-network/client/-/client-0.8.8.tgz#ea25437cde13654be2ed7b6756c430dfee07883c"
+  integrity sha512-zNAd6KiMxaCtioX17YiEiaHJQVZoNCyvm+9mZrv6NqNJt4Jw2Xf53gThaginuJSIZrsv4MfhV5KesH8x+LyLWg==
   dependencies:
     "@solana/wallet-adapter-base" "^0.9.2"
     "@solana/web3.js" "^1.36.0"
